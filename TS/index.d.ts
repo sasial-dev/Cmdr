@@ -249,7 +249,7 @@ interface Registry {
     filter?: (command: CommandDefinition) => boolean
   ): void;
   /** Registers the default set of commands. */
-  RegisterDefaultCommands(groups: Array<string>): void;
+  RegisterDefaultCommands(groups?: Array<string>): void;
   RegisterDefaultCommands(
     filter: (command: CommandDefinition) => boolean
   ): void;
