@@ -1,3 +1,32 @@
+# v1.12.0
+
+- Add `convertTimestamp` default command, outputs a human-readable timestamp from epoch seconds
+- Add `positiveInteger`, `nonNegativeInteger`, `byte` (0-255), `digit` (0-9) built-in types (including respective plural types)
+- Add `json` built-in type, takes in a Json string and provides a Luau table
+- Add internal IsServer assertions for `RegisterDefaultCommands` and `commandServerScript`
+- Add 'tips' to the help command output
+- Make window scroll to bottom on input
+- Make fuzzy finders search the entire string, rather than looking at the start
+- Make autocomplete menu scrollable
+- Fix window not resizing on clear
+- Remove global initialization scripts feature
+
+# v1.11.0
+
+- Add support for new Roblox CoreGui Chat
+- Add ArgumentOperatorAliases option to types which allows specifying short hands like "me", "others", "all", etc for any type
+
+# v1.10.0
+- Improve help command
+- Alias command now supports optional arguments
+- Legacy RoStrap support has been removed
+- Command string text size is now capped at 100K
+- Improved error messages when registering commands
+- Improved docs
+- Improved automatic line sizing
+- Fix bug causing var and varSet to yield on require which could make clients fetch server modules too late
+- The `run-lines` command now runs on the client
+
 # v1.9.0
 - Significantly improved the performance of Util.EmulateTabstops for long strings by using a string builder table (~250-350x) (#190)
   - Allows for long strings to be displayed in the output without a freeze

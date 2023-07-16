@@ -2,13 +2,12 @@
 -- luacheck: ignore 212
 local GuiService = game:GetService("GuiService")
 local UserInputService = game:GetService("UserInputService")
-local TextService = game:GetService("TextService")
+local TextChatService = game:GetService("TextChatService")
 local Players = game:GetService("Players")
 local Player = Players.LocalPlayer
 
-local LINE_HEIGHT = 20
 local WINDOW_MAX_HEIGHT = 300
-local MOUSE_TOUCH_ENUM = {Enum.UserInputType.MouseButton1, Enum.UserInputType.MouseButton2, Enum.UserInputType.Touch}
+local MOUSE_TOUCH_ENUM = { Enum.UserInputType.MouseButton1, Enum.UserInputType.MouseButton2, Enum.UserInputType.Touch }
 
 --- Window handles the command bar GUI
 local Window = {
@@ -38,24 +37,11 @@ end
 
 --- Recalculate the window height
 function Window:UpdateWindowHeight()
-	local windowHeight = LINE_HEIGHT
-
-	for _, child in pairs(Gui:GetChildren()) do
-		if child:IsA("GuiObject") then
-			windowHeight = windowHeight + child.Size.Y.Offset
-		end
-	end
-
-	Gui.CanvasSize = UDim2.new(Gui.CanvasSize.X.Scale, Gui.CanvasSize.X.Offset, 0, windowHeight)
-	Gui.Size =
-		UDim2.new(
-		Gui.Size.X.Scale,
-		Gui.Size.X.Offset,
-		0,
-		windowHeight > WINDOW_MAX_HEIGHT and WINDOW_MAX_HEIGHT or windowHeight
-	)
-
-	Gui.CanvasPosition = Vector2.new(0, math.clamp(windowHeight - 300, 0, math.huge))
+	local windowHeight = Gui.UIListLayout.AbsoluteContentSize.Y
+		+ Gui.UIPadding.PaddingTop.Offset
+		+ Gui.UIPadding.PaddingBottom.Offset
+	Gui.Size = UDim2.new(Gui.Size.X.Scale, Gui.Size.X.Offset, 0, math.clamp(windowHeight, 0, WINDOW_MAX_HEIGHT))
+	Gui.CanvasPosition = Vector2.new(0, windowHeight)
 end
 
 --- Add a line to the command bar
@@ -73,19 +59,8 @@ function Window:AddLine(text, options)
 	end
 
 	local str = self.Cmdr.Util.EmulateTabstops(text or "nil", 8)
+
 	local line = Line:Clone()
-	line.Size =
-		UDim2.new(
-		line.Size.X.Scale,
-		line.Size.X.Offset,
-		0,
-		TextService:GetTextSize(
-			str,
-			line.TextSize,
-			line.Font,
-			Vector2.new(Gui.UIListLayout.AbsoluteContentSize.X, math.huge)
-		).Y + (LINE_HEIGHT - line.TextSize)
-	)
 	line.Text = str
 	line.TextColor3 = options.Color or line.TextColor3
 	line.RichText = options.RichText or false
@@ -102,6 +77,11 @@ function Window:SetVisible(visible)
 	Gui.Visible = visible
 
 	if visible then
+		self.PreviousChatWindowConfigurationEnabled = TextChatService.ChatWindowConfiguration.Enabled
+		self.PreviousChatInputBarConfigurationEnabled = TextChatService.ChatInputBarConfiguration.Enabled
+		TextChatService.ChatWindowConfiguration.Enabled = false
+		TextChatService.ChatInputBarConfiguration.Enabled = false
+
 		Entry.TextBox:CaptureFocus()
 		self:SetEntryText("")
 
@@ -110,6 +90,11 @@ function Window:SetVisible(visible)
 			UserInputService.MouseBehavior = Enum.MouseBehavior.Default
 		end
 	else
+		TextChatService.ChatWindowConfiguration.Enabled = if self.PreviousChatWindowConfigurationEnabled ~= nil then 
+			self.PreviousChatWindowConfigurationEnabled else true
+		TextChatService.ChatInputBarConfiguration.Enabled = if self.PreviousChatInputBarConfigurationEnabled ~= nil then 
+			self.PreviousChatInputBarConfigurationEnabled else true
+
 		Entry.TextBox:ReleaseFocus()
 		self.AutoComplete:Hide()
 
@@ -137,6 +122,7 @@ function Window:SetEntryText(text)
 	if self:IsVisible() then
 		Entry.TextBox:CaptureFocus()
 		Entry.TextBox.CursorPosition = #text + 1
+		Window:UpdateWindowHeight()
 	end
 end
 
@@ -184,16 +170,15 @@ function Window:TraverseHistory(delta)
 
 	if self.HistoryState == nil then
 		self.HistoryState = {
-			Position = #history + 1;
-			InitialText = self:GetEntryText();
+			Position = #history + 1,
+			InitialText = self:GetEntryText(),
 		}
 	end
 
 	self.HistoryState.Position = math.clamp(self.HistoryState.Position + delta, 1, #history + 1)
 
 	self:SetEntryText(
-		self.HistoryState.Position == #history + 1
-			and self.HistoryState.InitialText
+		self.HistoryState.Position == #history + 1 and self.HistoryState.InitialText
 			or history[self.HistoryState.Position]
 	)
 end
@@ -282,7 +267,8 @@ function Window:BeginInput(input, gameProcessed)
 				local lastArg = self.AutoComplete.Arg
 
 				newText = command.Alias
-				insertSpace = self.AutoComplete.NumArgs ~= #command.ArgumentDefinitions and self.AutoComplete.IsPartial == false
+				insertSpace = self.AutoComplete.NumArgs ~= #command.ArgumentDefinitions
+					and self.AutoComplete.IsPartial == false
 
 				local args = command.Arguments
 				for i = 1, #args do
@@ -323,31 +309,28 @@ function Window:BeginInput(input, gameProcessed)
 end
 
 -- Hook events
-Entry.TextBox.FocusLost:Connect(
-	function(submit)
-		return Window:LoseFocus(submit)
-	end
-)
+Entry.TextBox.FocusLost:Connect(function(submit)
+	return Window:LoseFocus(submit)
+end)
 
-UserInputService.InputBegan:Connect(
-	function(input, gameProcessed)
-		return Window:BeginInput(input, gameProcessed)
-	end
-)
+UserInputService.InputBegan:Connect(function(input, gameProcessed)
+	return Window:BeginInput(input, gameProcessed)
+end)
 
-Entry.TextBox:GetPropertyChangedSignal("Text"):Connect(
-	function()
-		if Entry.TextBox.Text:match("\t") then -- Eat \t
-			Entry.TextBox.Text = Entry.TextBox.Text:gsub("\t", "")
-			return
-		end
-		if Window.OnTextChanged then
-			Gui.CanvasPosition = Vector2.new(0, math.clamp(Gui.CanvasSize.Height.Offset - 300, 0, math.huge))
-			return Window.OnTextChanged(Entry.TextBox.Text)
-		end
-	end
-)
+Entry.TextBox:GetPropertyChangedSignal("Text"):Connect(function()
+	Gui.CanvasPosition = Vector2.new(0, Gui.AbsoluteCanvasSize.Y)
 
-Gui.ChildAdded:Connect(Window.UpdateWindowHeight)
+	if Entry.TextBox.Text:match("\t") then -- Eat \t
+		Entry.TextBox.Text = Entry.TextBox.Text:gsub("\t", "")
+		return
+	end
+	if Window.OnTextChanged then
+		return Window.OnTextChanged(Entry.TextBox.Text)
+	end
+end)
+
+Gui.ChildAdded:Connect(function()
+	task.defer(Window.UpdateWindowHeight)
+end)
 
 return Window

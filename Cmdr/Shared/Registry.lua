@@ -4,7 +4,7 @@ local Util = require(script.Parent.Util)
 
 --- The registry keeps track of all the commands and types that Cmdr knows about.
 local Registry = {
-	TypeMethods = Util.MakeDictionary({"Transform", "Validate", "Autocomplete", "Parse", "DisplayName", "Listable", "ValidateOnce", "Prefixes", "Default"});
+	TypeMethods = Util.MakeDictionary({"Transform", "Validate", "Autocomplete", "Parse", "DisplayName", "Listable", "ValidateOnce", "Prefixes", "Default", "ArgumentOperatorAliases"});
 	CommandMethods = Util.MakeDictionary({"Name", "Aliases", "AutoExec", "Description", "Args", "Run", "ClientRun", "Data", "Group"});
 	CommandArgProps = Util.MakeDictionary({"Name", "Type", "Description", "Optional", "Default"});
 	Types = {};
@@ -28,7 +28,7 @@ local Registry = {
 --- Registers a type in the system.
 -- name: The type Name. This must be unique.
 function Registry:RegisterType (name, typeObject)
-	if not name or not typeof(name) == "string" then
+	if not name or typeof(name) ~= "string" then
 		error("Invalid type name provided: nil")
 	end
 
@@ -134,8 +134,13 @@ end
 -- Handles replicating the definition to the client.
 function Registry:RegisterCommand (commandScript, commandServerScript, filter)
 	local commandObject = require(commandScript)
+	assert(
+		typeof(commandObject) == "table",
+		`Invalid return value from command script "{commandScript.Name}" (CommandDefinition expected, got {typeof(commandObject)})`
+	)
 
 	if commandServerScript then
+		assert(RunService:IsServer(), "The commandServerScript parameter is not valid for client usage.")
 		commandObject.Run = require(commandServerScript)
 	end
 
@@ -180,6 +185,8 @@ end
 
 --- Registers the default commands, with an optional filter function or array of groups.
 function Registry:RegisterDefaultCommands (arrayOrFunc)
+	assert(RunService:IsServer(), "RegisterDefaultCommands cannot be called from the client.")
+
 	local isArray = type(arrayOrFunc) == "table"
 
 	if isArray then
