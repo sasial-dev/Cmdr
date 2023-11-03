@@ -1,6 +1,6 @@
 {
   "name": "@rbxts/cmdr",
-  "version": "1.9.0-ts.0",
+  "version": "1.12.0-ts.0",
   "description": "",
   "main": "TS/init.lua",
   "types": "TS/index.d.ts",
