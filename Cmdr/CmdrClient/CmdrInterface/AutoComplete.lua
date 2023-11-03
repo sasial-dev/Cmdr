@@ -2,15 +2,14 @@
 local Players = game:GetService("Players")
 local Player = Players.LocalPlayer
 
-return function (Cmdr)
+return function(Cmdr)
 	local AutoComplete = {
-		Items = {};
-		ItemOptions = {};
-		SelectedItem = 0;
+		Items = {},
+		ItemOptions = {},
+		SelectedItem = 0,
 	}
 
 	local Util = Cmdr.Util
-	local Shorthands = Util.MakeDictionary({"me", "all", ".", "*", "others"})
 
 	local Gui = Player:WaitForChild("PlayerGui"):WaitForChild("Cmdr"):WaitForChild("Autocomplete")
 	local AutoItem = Gui:WaitForChild("TextButton")
@@ -19,29 +18,44 @@ return function (Cmdr)
 	local Entry = Gui.Parent:WaitForChild("Frame"):WaitForChild("Entry")
 	AutoItem.Parent = nil
 
+	local defaultBarThickness = Gui.ScrollBarThickness
+
 	-- Helper function that sets text and resizes labels
 	local function SetText(obj, textObj, text, sizeFromContents)
 		obj.Visible = text ~= nil
 		textObj.Text = text or ""
 
 		if sizeFromContents then
-			textObj.Size = UDim2.new(0, Util.GetTextSize(text or "", textObj, Vector2.new(1000, 1000), 1, 0).X, obj.Size.Y.Scale, obj.Size.Y.Offset)
+			textObj.Size = UDim2.new(
+				0,
+				Util.GetTextSize(text or "", textObj, Vector2.new(1000, 1000), 1, 0).X,
+				obj.Size.Y.Scale,
+				obj.Size.Y.Offset
+			)
 		end
 	end
 
+	local function UpdateContainerSize()
+		Gui.Size = UDim2.new(
+			0,
+			math.max(Title.Field.TextBounds.X + Title.Field.Type.TextBounds.X, Gui.Size.X.Offset),
+			0,
+			math.min(Gui.UIListLayout.AbsoluteContentSize.Y, Gui.Parent.AbsoluteSize.Y - Gui.AbsolutePosition.Y - 10)
+		)
+	end
+
 	-- Update the info display (Name, type, and description) based on given options.
-	local function UpdateInfoDisplay (options)
+	local function UpdateInfoDisplay(options)
 		-- Update the objects' text and sizes
 		SetText(Title, Title.Field, options.name, true)
-		SetText(Title.Field.Type, Title.Field.Type, options.type and ": " .. options.type:sub(1, 1):upper() .. options.type:sub(2))
+		SetText(
+			Title.Field.Type,
+			Title.Field.Type,
+			options.type and ": " .. options.type:sub(1, 1):upper() .. options.type:sub(2)
+		)
 		SetText(Description, Description.Label, options.description)
 
 		Description.Label.TextColor3 = options.invalid and Color3.fromRGB(255, 73, 73) or Color3.fromRGB(255, 255, 255)
-
-		-- Calculate needed width and height
-		local infoWidth = Title.Field.TextBounds.X + Title.Field.Type.TextBounds.X
-
-		local guiWidth = math.max(infoWidth, Gui.Size.X.Offset)
 		Description.Size = UDim2.new(1, 0, 0, 40)
 
 		-- Flow description text
@@ -54,9 +68,10 @@ return function (Cmdr)
 		end
 
 		-- Update container
-		wait()
+		task.wait()
 		Gui.UIListLayout:ApplyLayout()
-		Gui.Size = UDim2.new(0, guiWidth, 0, Gui.UIListLayout.AbsoluteContentSize.Y)
+		UpdateContainerSize()
+		Gui.ScrollBarThickness = defaultBarThickness
 	end
 
 	--- Shows the auto complete menu with the given list and possible options
@@ -70,7 +85,7 @@ return function (Cmdr)
 	-- options.description?: The description for the currently active info box
 	-- options.invalid?: If true, description is shown in red.
 	-- options.isLast?: If true, auto complete won't keep going after this argument.
-	function AutoComplete:Show (items, options)
+	function AutoComplete:Show(items, options)
 		options = options or {}
 
 		-- Remove old options.
@@ -93,19 +108,23 @@ return function (Cmdr)
 		-- Generate the new option labels
 		local autocompleteWidth = 200
 
+		Gui.ScrollBarThickness = 0
+
 		for i, item in pairs(self.Items) do
 			local leftText = item[1]
 			local rightText = item[2]
 
-			if Shorthands[leftText] then
-				leftText = rightText
-			end
-
 			local btn = AutoItem:Clone()
 			btn.Name = leftText .. rightText
 			btn.BackgroundTransparency = i == self.SelectedItem and 0.5 or 1
-			btn.Typed.Text = leftText
-			btn.Suggest.Text = string.rep(" ", #leftText) .. rightText:sub(#leftText + 1)
+
+			local start, stop = string.find(rightText:lower(), leftText:lower(), 1, true)
+			btn.Typed.Text = string.rep(" ", start - 1) .. leftText
+			btn.Suggest.Text = string.sub(rightText, 0, start - 1)
+				.. string.rep(" ", #leftText)
+				.. string.sub(rightText, stop + 1)
+
+
 			btn.Parent = Gui
 			btn.LayoutOrder = i
 
@@ -123,13 +142,14 @@ return function (Cmdr)
 		local text = Entry.TextBox.Text
 		local words = Util.SplitString(text)
 		if text:sub(#text, #text) == " " and not options.at then
-			words[#words+1] = "e"
+			words[#words + 1] = "e"
 		end
 		table.remove(words, #words)
 		local extra = (options.at and options.at or (#table.concat(words, " ") + 1)) * 7
 
 		-- Update the auto complete container
-		Gui.Position = UDim2.new(0, Entry.TextBox.AbsolutePosition.X - 10 + extra, 0, Entry.TextBox.AbsolutePosition.Y + 30)
+		Gui.Position =
+			UDim2.new(0, Entry.TextBox.AbsolutePosition.X - 10 + extra, 0, Entry.TextBox.AbsolutePosition.Y + 30)
 		Gui.Size = UDim2.new(0, autocompleteWidth, 0, Gui.UIListLayout.AbsoluteContentSize.Y)
 		Gui.Visible = true
 
@@ -138,7 +158,7 @@ return function (Cmdr)
 	end
 
 	--- Returns the selected item in the auto complete
-	function AutoComplete:GetSelectedItem ()
+	function AutoComplete:GetSelectedItem()
 		if Gui.Visible == false then
 			return nil
 		end
@@ -147,18 +167,20 @@ return function (Cmdr)
 	end
 
 	--- Hides the auto complete
-	function AutoComplete:Hide ()
+	function AutoComplete:Hide()
 		Gui.Visible = false
 	end
 
 	--- Returns if the menu is visible
-	function AutoComplete:IsVisible ()
+	function AutoComplete:IsVisible()
 		return Gui.Visible
 	end
 
 	--- Changes the user's item selection by the given delta
-	function AutoComplete:Select (delta)
-		if not Gui.Visible then return end
+	function AutoComplete:Select(delta)
+		if not Gui.Visible then
+			return
+		end
 
 		self.SelectedItem = self.SelectedItem + delta
 
@@ -172,10 +194,23 @@ return function (Cmdr)
 			item.gui.BackgroundTransparency = i == self.SelectedItem and 0.5 or 1
 		end
 
+		Gui.CanvasPosition = Vector2.new(
+			0,
+			math.max(
+				0,
+				Title.Size.Y.Offset
+					+ Description.Size.Y.Offset
+					+ self.SelectedItem * AutoItem.Size.Y.Offset
+					- Gui.Size.Y.Offset
+			)
+		)
+
 		if self.Items[self.SelectedItem] and self.Items[self.SelectedItem].options then
 			UpdateInfoDisplay(self.Items[self.SelectedItem].options or {})
 		end
 	end
+
+	Gui.Parent:GetPropertyChangedSignal("AbsoluteSize"):Connect(UpdateContainerSize)
 
 	return AutoComplete
 end
