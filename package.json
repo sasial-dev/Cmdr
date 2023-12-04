@@ -1,6 +1,6 @@
 {
   "name": "@rbxts/cmdr",
-  "version": "1.12.0-ts.0",
+  "version": "1.12.0",
   "description": "",
   "main": "TS/init.lua",
   "types": "TS/index.d.ts",
@@ -11,15 +11,15 @@
   "scripts": {},
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/osyrisrblx/Cmdr.git"
+    "url": "git+https://github.com/sasial-dev/Cmdr.git"
   },
   "keywords": [],
   "author": "",
-  "license": "ISC",
+  "license": "MIT",
   "bugs": {
-    "url": "https://github.com/osyrisrblx/Cmdr/issues"
+    "url": "https://github.com/sasial-dev/Cmdr/issues"
   },
-  "homepage": "https://github.com/osyrisrblx/Cmdr#readme",
+  "homepage": "https://github.com/sasial-dev/Cmdr#readme",
   "devDependencies": {
     "@rbxts/types": "^1.0.386"
   }
