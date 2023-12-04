@@ -81,7 +81,7 @@ function Util.MakeFuzzyFinder(setOrContainer)
 				else
 					table.insert(results, 1, value)
 				end
-			elseif name:lower():sub(1, #text) == text:lower() then
+			elseif name:lower():find(text:lower(), 1, true) then
 				results[#results + 1] = value
 			end
 		end
@@ -285,6 +285,7 @@ function Util.MakeListableType(type, override)
 		ValidateOnce = type.ValidateOnce,
 		Autocomplete = type.Autocomplete,
 		Default = type.Default,
+		ArgumentOperatorAliases = type.ArgumentOperatorAliases,
 		Parse = function(...)
 			return {type.Parse(...)}
 		end
@@ -315,7 +316,7 @@ function Util.RunCommandString(dispatcher, commandString)
 
 	local output = ""
 	for i, command in ipairs(commands) do
-		local outputEncoded = output:gsub("%$", "\\x24")
+		local outputEncoded = output:gsub("%$", "\\x24"):gsub("%%","%%%%")
 		command = command:gsub("||", output:find("%s") and ("%q"):format(outputEncoded) or outputEncoded)
 
 		output = tostring(
@@ -385,28 +386,29 @@ function Util.MakeAliasCommand(name, commandString)
 
 	commandString = Util.EncodeEscapedOperators(commandString)
 
-
 	local seenArgs = {}
 
 	for arg in commandString:gmatch("$(%d+)") do
 		if seenArgs[arg] == nil then
 			seenArgs[arg] = true
-			local options = commandString:match("$" .. arg .. "(%b{})")
+			local options = commandString:match(`${arg}(%b\{})`)
 
-			local argType, argName, argDescription
+			local argOptional, argType, argName, argDescription
 			if options then
-				options = options:sub(2, #options-1) -- remove braces
+				options = options:sub(2, #options - 1) -- remove braces
 				argType, argName, argDescription = unpack(options:split("|"))
 			end
 
-			argType = argType or "string"
-			argName = argName or ("Argument " .. arg)
+			argOptional = argType and not not argType:match("%?$")
+			argType = if argType then argType:match("^%w+") else "string"
+			argName = argName or `Argument {arg}`
 			argDescription = argDescription or ""
 
 			table.insert(args, {
-				Type = argType;
-				Name = argName;
-				Description = argDescription;
+				Type = argType,
+				Name = argName,
+				Description = argDescription,
+				Optional = argOptional,
 			})
 		end
 	end
@@ -414,12 +416,12 @@ function Util.MakeAliasCommand(name, commandString)
 	return {
 		Name = commandName,
 		Aliases = {},
-		Description = "<Alias> " .. (commandDescription or commandString),
+		Description = `<Alias> {commandDescription or commandString}`,
 		Group = "UserAlias",
 		Args = args,
 		Run = function(context)
 			return Util.RunCommandString(context.Dispatcher, Util.SubstituteArgs(commandString, context.RawArguments))
-		end
+		end,
 	}
 end
 

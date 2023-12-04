@@ -1,4 +1,4 @@
-return function ()
+return function()
 	local Cmdr = Instance.new("ScreenGui")
 	Cmdr.DisplayOrder = 1000
 	Cmdr.Name = "Cmdr"
@@ -9,24 +9,30 @@ return function ()
 	Frame.BackgroundColor3 = Color3.fromRGB(17, 17, 17)
 	Frame.BackgroundTransparency = 0.4
 	Frame.BorderSizePixel = 0
-	Frame.CanvasSize = UDim2.new(0, 0, 0, 100)
+	Frame.CanvasSize = UDim2.new(0, 0, 0, 0)
 	Frame.Name = "Frame"
 	Frame.Position = UDim2.new(0.025, 0, 0, 25)
 	Frame.ScrollBarThickness = 6
 	Frame.ScrollingDirection = Enum.ScrollingDirection.Y
 	Frame.Selectable = false
-	Frame.Size = UDim2.new(0.95, 0, 0, 50)
+	Frame.Size = UDim2.new(0.95, 0, 0, 0)
 	Frame.Visible = false
+	Frame.AutomaticCanvasSize = Enum.AutomaticSize.Y
 	Frame.Parent = Cmdr
 
-	local Autocomplete = Instance.new("Frame")
+	local Autocomplete = Instance.new("ScrollingFrame")
 	Autocomplete.BackgroundColor3 = Color3.fromRGB(59, 59, 59)
 	Autocomplete.BackgroundTransparency = 0.5
 	Autocomplete.BorderSizePixel = 0
+	Autocomplete.CanvasSize = UDim2.new(0, 0, 0, 0)
 	Autocomplete.Name = "Autocomplete"
 	Autocomplete.Position = UDim2.new(0, 167, 0, 75)
+	Autocomplete.ScrollBarThickness = 6
+	Autocomplete.ScrollingDirection = Enum.ScrollingDirection.Y
+	Autocomplete.Selectable = false
 	Autocomplete.Size = UDim2.new(0, 200, 0, 200)
 	Autocomplete.Visible = false
+	Autocomplete.AutomaticCanvasSize = Enum.AutomaticSize.Y
 	Autocomplete.Parent = Cmdr
 
 	local UIListLayout = Instance.new("UIListLayout")
@@ -39,11 +45,12 @@ return function ()
 	Line.Font = Enum.Font.Code
 	Line.Name = "Line"
 	Line.Size = UDim2.new(1, 0, 0, 20)
+	Line.AutomaticSize = Enum.AutomaticSize.Y
 	Line.TextColor3 = Color3.fromRGB(255, 255, 255)
 	Line.TextSize = 14
 	Line.TextXAlignment = Enum.TextXAlignment.Left
-	Line.ClearTextOnFocus = false
 	Line.TextEditable = false
+	Line.ClearTextOnFocus = false
 	Line.Parent = Frame
 
 	local UIPadding = Instance.new("UIPadding")
