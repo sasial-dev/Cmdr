@@ -89,7 +89,7 @@ interface CommandContext {
   /** The command output, if the command has already been run. Typically only accessible in the AfterRun hook. */
   Response: string | undefined;
   /** Returns the ArgumentContext for the given index. */
-  GetArguments(index: number): ArgumentContext;
+  GetArgument(index: number): ArgumentContext;
   /** Returns the command data that was sent along with the command. This is the return value of the Data function from the command definition. */
   GetData(): unknown;
   /** Returns a table of the given name. Always returns the same table on subsequent calls. Useful for storing things like ban information. Same as `Registry.GetStore`. */
