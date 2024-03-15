@@ -186,7 +186,7 @@ interface CommandDefinition {
   /** Optional, can be be any value you wish. This property is intended to be used in hooks, so that you can categorize commands and decide if you want a specific user to be able to run them or not. */
   Group?: unknown;
   /** Array of `CommandArgument` objects, or functions that return `CommandArgument` objects. */
-  Args: Array<CommandArgument | ((context: CommandContext) => CommandArgument)>;
+  Args: Array<CommandArgument | ((context: CommandContext) => CommandArgument | undefined)>;
   /** If your command needs to gather some extra data from the client that's only available on the client, then you can define this function. It should accept the CommandContext for the current command as an argument, and return a single value which will be available in the command with [CommandContext.GetData](https://eryn.io/Cmdr/api/CommandContext.html#getdata). */
   Data?: (context: CommandContext, ...args: Array<unknown>) => unknown;
   /**
